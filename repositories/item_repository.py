@@ -5,7 +5,7 @@ from utils.functional_utils import generate_id
 
 class ItemRepository:
     def __init__(self):
-        # Banco de dados em memória (dicionário)
+
         self.db: Dict[int, Dict] = {}
 
 
@@ -16,7 +16,7 @@ class ItemRepository:
         self.db[item_id] = item_dict
         return Item(**item_dict)
 
-    #  (2. List Comprehension)
+
     def get_all(self) -> List[Item]:
         return [Item(**item) for item in self.db.values()]
 

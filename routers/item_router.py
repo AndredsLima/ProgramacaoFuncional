@@ -25,6 +25,12 @@ async def get_single_item(item_id: int):
         raise HTTPException(status_code=404, detail="Item not found")
     return item
 
+@router.get("/items/search/", response_model=List[Item])
+async def search_items_byname(name: str):
+    items = item_service.search_items_by_name(name)
+    if not items:
+        raise HTTPException(status_code=404, detail="No items found with the given name")
+    return items
 
 @router.put("/items/{item_id}", response_model=Item)
 async def update_existing_item(item_id: int, item: ItemUpdate):
@@ -41,23 +47,28 @@ async def delete_existing_item(item_id: int):
     return {"message": "Item deleted successfully"}
 
 class PriceTransformRequest(BaseModel):
-    transform_type: str  # Tipo de transformação (tax, discount, round)
-    items: List[int]     # IDs dos itens a serem transformados
+    transform_type: str
+    items: List[int]
 
 # Endpoint para transformar preços
 @router.post("/items/transform-prices/", response_model=List[Item])
 async def transform_prices(request: PriceTransformRequest):
-    # Mapeamento de funções de transformação
+    """
+    Aplica uma transformação nos preços dos itens com base no tipo de transformação especificado.
+
+    Tipos de transformação disponíveis:
+    - **tax**: Aplica uma taxa de 10% sobre o preço.
+    - **discount**: Aplica um desconto de 20% sobre o preço.
+    - **round**: Arredonda o preço para duas casas decimais.
+    """
     transform_fns = {
-        "tax": lambda price: price * 1.10,       # Aplica 10% de taxa
-        "discount": lambda price: price * 0.80,  # Aplica 20% de desconto
-        "round": lambda price: round(price, 2),  # Arredonda para duas casas decimais
+        "tax": lambda price: price * 1.10,
+        "discount": lambda price: price * 0.80,
+        "round": lambda price: round(price, 2),
     }
 
-    # Verifica se o tipo de transformação é válido
     if request.transform_type not in transform_fns:
         raise HTTPException(status_code=400, detail="Tipo de transformação inválido.")
 
-    # Aplica a transformação aos itens
-    transformed_items = item_service.transform_prices(transform_fns[request.transform_type],request.items)
+    transformed_items = item_service.transform_prices(transform_fns[request.transform_type], request.items)
     return transformed_items
